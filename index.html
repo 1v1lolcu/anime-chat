@@ -196,6 +196,15 @@
         <label>Renk</label>
         <div class="swatches" id="colorSwatches"></div>
       </div>
+      <div class="field">
+        <label>Model (opsiyonel, boş bırakırsan genel ayarındaki kullanılır)</label>
+        <select id="charModel">
+          <option value="">Genel ayarı kullan</option>
+          <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (hızlı, günlük 500 ücretsiz)</option>
+          <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (hızlı, günlük 500 ücretsiz)</option>
+          <option value="gemini-3.5-flash">gemini-3.5-flash (daha canlı/kaliteli, günlük 20 ücretsiz)</option>
+        </select>
+      </div>
       <button class="btn" id="createSaveBtn">Karakteri oluştur</button>
     </div>
   </div>
@@ -299,6 +308,7 @@ function renderCharList(){
     document.getElementById('charName').value='';
     document.getElementById('charPersona').value='';
     document.getElementById('charGreeting').value='';
+    document.getElementById('charModel').value='';
     selectedColor = COLORS[0];
     buildSwatches();
     showScreen('screen-create');
@@ -326,8 +336,9 @@ document.getElementById('createSaveBtn').onclick = ()=>{
   const name = document.getElementById('charName').value.trim();
   const persona = document.getElementById('charPersona').value.trim();
   const greeting = document.getElementById('charGreeting').value.trim();
+  const model = document.getElementById('charModel').value;
   if(!name || !persona){ alert('İsim ve kişilik açıklaması gerekli.'); return; }
-  const c = { id: 'c'+Date.now(), name, persona, greeting, color: selectedColor };
+  const c = { id: 'c'+Date.now(), name, persona, greeting, color: selectedColor, model: model || null };
   state.characters.push(c);
   store.set('panel_characters', state.characters);
   renderCharList();
@@ -434,19 +445,32 @@ async function sendMessage(){
 }
 
 async function callGemini(character, history){
-  const sys = `Sen bir rol yapma (roleplay) karakterisin. Adın: ${character.name}. Kişiliğin ve arka planın: ${character.persona}. Her zaman bu karakter olarak, birinci ağızdan, doğal ve sürükleyici şekilde cevap ver. Aksiyonları *yıldız içinde* yazabilirsin. Kullanıcıyı asla yapay zeka olduğunu hatırlatarak sohbetten çıkarma, karakterden kopma. ÖNEMLİ: Cevapların KISA olsun, en fazla 2-4 cümle veya 1 kısa paragraf. Uzun monologlar yazma, sohbeti akıcı ve karşılıklı tut, topu tekrar kullanıcıya at.`;
+  const sys = `Sen bir rol yapma / interaktif kurgu (roleplay) partnerisin. Görevin ${character.name} karakterini oynamak.
+
+KARAKTER PROFİLİ — ${character.name}:
+${character.persona}
+
+NASIL OYNAYACAKSIN:
+- Tamamen birinci ağızdan, ${character.name} olarak konuş. Asistan gibi değil, gerçek bir karakter gibi davran; yapay zeka olduğunu asla hatırlatma, sohbetin dışına asla çıkma.
+- Sahneyi hep canlı tut: *yıldız içinde* kısa aksiyon/beden dili/çevre detayları ver (ses, ışık, mesafe, dokunuş gibi duyusal ayrıntılar), sonra doğal konuşma diliyle replik söyle. Aksiyon ve diyaloğu iç içe kullan, sadece diyalog yazma.
+- Kullanıcının söylediği/yaptığı şeye SPESİFİK tepki ver — onun repliğini görmezden gelip kendi planına devam etme. Karakterin kişiliğine uygun şekilde şaşır, sinirlen, eğlen, meydan oku, ya da yumuşa; duygusal tepkiler versin.
+- Aynı kalıpları, aynı cümleleri, aynı imgeleri tekrar etme. Her mesajda sahneyi biraz ilerlet: yeni bir detay, yeni bir hamle, yeni bir gerilim ya da yeni bir bilgi kat.
+- Diyaloğu monolog haline getirme. Sahneyi tek başına bitirme; kullanıcının tepki verebileceği bir boşluk bırak (bir soru, bir meydan okuma, bir bekleyiş, yarım kalan bir hamle).
+- Cevap uzunluğu: ortalama 3-6 cümle civarı, akışa göre biraz kısa ya da biraz uzun olabilir ama asla uzun bir duvar yazı olmasın. Sohbeti karşılıklı, hızlı tempolu tut.
+- Karakterin ses tonunu (sert mi, utangaç mı, alaycı mı, sıcak mı) baştan sona tutarlı koru.`;
   const contents = history.map(m=>({
     role: m.role==='user' ? 'user' : 'model',
     parts: [{text: m.text}]
   }));
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${state.model}:generateContent?key=${encodeURIComponent(state.apiKey)}`;
+  const modelToUse = character.model || state.model;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${encodeURIComponent(state.apiKey)}`;
   const res = await fetch(url, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({
       system_instruction: { parts: [{text: sys}] },
       contents: contents,
-      generationConfig: { temperature: 1.0, maxOutputTokens: 220 }
+      generationConfig: { temperature: 1.05, topP: 0.95, maxOutputTokens: 380 }
     })
   });
   if(!res.ok){
