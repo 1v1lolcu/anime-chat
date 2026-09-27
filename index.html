@@ -111,12 +111,15 @@
     align-self:flex-end; background:var(--pink); color:#fff; border:2.5px solid var(--line);
     border-radius:16px 4px 16px 16px; box-shadow:2px 2px 0 var(--line);
   }
-  .msg .who{font-family:'Kalam',cursive; font-weight:700; font-size:.78rem; margin-bottom:3px; opacity:.75; display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .msg .who{font-family:'Kalam',cursive; font-weight:700; font-size:.78rem; margin-bottom:3px; opacity:.75;}
   .msg .delx{
-    background:transparent; border:none; cursor:pointer; font-size:.9rem; opacity:.45; line-height:1; padding:2px 4px;
-    color:inherit;
+    position:absolute; top:-9px; background:#fff; border:2px solid var(--line); border-radius:50%;
+    width:24px; height:24px; display:flex; align-items:center; justify-content:center;
+    font-size:.75rem; cursor:pointer; padding:0; line-height:1;
   }
-  .msg .delx:active{opacity:1;}
+  .msg.ai .delx{ right:-8px; }
+  .msg.user .delx{ left:-8px; background:#fff; }
+  .msg .delx:active{ transform:scale(0.9); }
   .typing{align-self:flex-start; font-size:.85rem; color:#6b6473; font-style:italic; padding-left:4px;}
   .inputbar{
     display:flex; gap:8px; padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));
@@ -368,7 +371,7 @@ function renderMessages(history){
     const div = document.createElement('div');
     div.className = 'msg ' + (m.role==='user' ? 'user' : 'ai');
     const who = m.role==='user' ? 'Sen' : c.name;
-    div.innerHTML = `<div class="who"><span>${escapeHtml(who)}</span><button class="delx" data-idx="${idx}" title="Mesajı sil">✕</button></div>${escapeHtml(m.text).replace(/\n/g,'<br>')}`;
+    div.innerHTML = `<div class="who">${escapeHtml(who)}</div>${escapeHtml(m.text).replace(/\n/g,'<br>')}<button class="delx" data-idx="${idx}" title="Mesajı sil">🗑️</button>`;
     box.appendChild(div);
   });
   box.scrollTop = box.scrollHeight;
