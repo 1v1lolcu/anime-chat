@@ -111,7 +111,12 @@
     align-self:flex-end; background:var(--pink); color:#fff; border:2.5px solid var(--line);
     border-radius:16px 4px 16px 16px; box-shadow:2px 2px 0 var(--line);
   }
-  .msg .who{font-family:'Kalam',cursive; font-weight:700; font-size:.78rem; margin-bottom:3px; opacity:.75;}
+  .msg .who{font-family:'Kalam',cursive; font-weight:700; font-size:.78rem; margin-bottom:3px; opacity:.75; display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .msg .delx{
+    background:transparent; border:none; cursor:pointer; font-size:.9rem; opacity:.45; line-height:1; padding:2px 4px;
+    color:inherit;
+  }
+  .msg .delx:active{opacity:1;}
   .typing{align-self:flex-start; font-size:.85rem; color:#6b6473; font-style:italic; padding-left:4px;}
   .inputbar{
     display:flex; gap:8px; padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));
@@ -359,14 +364,23 @@ function renderMessages(history){
   const box = document.getElementById('messages');
   box.innerHTML = '';
   const c = state.characters.find(x=>x.id===state.activeCharId);
-  history.forEach(m=>{
+  history.forEach((m, idx)=>{
     const div = document.createElement('div');
     div.className = 'msg ' + (m.role==='user' ? 'user' : 'ai');
     const who = m.role==='user' ? 'Sen' : c.name;
-    div.innerHTML = `<div class="who">${escapeHtml(who)}</div>${escapeHtml(m.text).replace(/\n/g,'<br>')}`;
+    div.innerHTML = `<div class="who"><span>${escapeHtml(who)}</span><button class="delx" data-idx="${idx}" title="Mesajı sil">✕</button></div>${escapeHtml(m.text).replace(/\n/g,'<br>')}`;
     box.appendChild(div);
   });
   box.scrollTop = box.scrollHeight;
+  box.querySelectorAll('.delx').forEach(btn=>{
+    btn.onclick = ()=>{
+      const idx = parseInt(btn.getAttribute('data-idx'), 10);
+      let h = store.get(chatKey(state.activeCharId), []);
+      h.splice(idx, 1);
+      store.set(chatKey(state.activeCharId), h);
+      renderMessages(h);
+    };
+  });
 }
 
 function escapeHtml(s){
@@ -417,7 +431,7 @@ async function sendMessage(){
 }
 
 async function callGemini(character, history){
-  const sys = `Sen bir rol yapma (roleplay) karakterisin. Adın: ${character.name}. Kişiliğin ve arka planın: ${character.persona}. Her zaman bu karakter olarak, birinci ağızdan, doğal ve sürükleyici şekilde cevap ver. Aksiyonları *yıldız içinde* yazabilirsin. Kullanıcıyı asla yapay zeka olduğunu hatırlatarak sohbetten çıkarma, karakterden kopma.`;
+  const sys = `Sen bir rol yapma (roleplay) karakterisin. Adın: ${character.name}. Kişiliğin ve arka planın: ${character.persona}. Her zaman bu karakter olarak, birinci ağızdan, doğal ve sürükleyici şekilde cevap ver. Aksiyonları *yıldız içinde* yazabilirsin. Kullanıcıyı asla yapay zeka olduğunu hatırlatarak sohbetten çıkarma, karakterden kopma. ÖNEMLİ: Cevapların KISA olsun, en fazla 2-4 cümle veya 1 kısa paragraf. Uzun monologlar yazma, sohbeti akıcı ve karşılıklı tut, topu tekrar kullanıcıya at.`;
   const contents = history.map(m=>({
     role: m.role==='user' ? 'user' : 'model',
     parts: [{text: m.text}]
@@ -429,7 +443,7 @@ async function callGemini(character, history){
     body: JSON.stringify({
       system_instruction: { parts: [{text: sys}] },
       contents: contents,
-      generationConfig: { temperature: 1.0, maxOutputTokens: 800 }
+      generationConfig: { temperature: 1.0, maxOutputTokens: 220 }
     })
   });
   if(!res.ok){
