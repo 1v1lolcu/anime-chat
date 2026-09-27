@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Panel — AI Anime RP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#15121c;
+    --paper:#f6efe2;
+    --pink:#ff3d6e;
+    --violet:#4b3a70;
+    --gold:#f2c14e;
+    --line:#15121c;
+    color-scheme: light;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--ink);
+    font-family:'Nunito',system-ui,sans-serif;
+    color:var(--ink);
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    overscroll-behavior:none;
+  }
+  .app{max-width:520px; margin:0 auto; min-height:100vh; background:var(--paper); display:flex; flex-direction:column; border-left:3px solid var(--line); border-right:3px solid var(--line);}
+  .halftone{
+    background-image: radial-gradient(var(--ink) 1.2px, transparent 1.2px);
+    background-size: 9px 9px;
+    background-color: var(--gold);
+  }
+  header.top{
+    padding:16px 18px 14px; border-bottom:3px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .brand{font-family:'Kalam',cursive; font-weight:700; font-size:1.5rem; letter-spacing:.5px;}
+  .iconbtn{
+    border:2px solid var(--line); background:#fff; border-radius:10px;
+    width:38px; height:38px; display:flex; align-items:center; justify-content:center;
+    font-size:1.1rem; cursor:pointer;
+  }
+  .iconbtn:active{transform:translateY(1px);}
+  .screen{flex:1; display:none; flex-direction:column; min-height:0;}
+  .screen.active{display:flex;}
+
+  /* Setup screen */
+  .setup{padding:22px 20px; gap:14px; display:flex; flex-direction:column;}
+  .setup h1{font-family:'Kalam',cursive; font-size:1.6rem; margin:0 0 2px;}
+  .setup p{margin:0; line-height:1.5; color:#3a3540;}
+  .field label{display:block; font-weight:800; font-size:.85rem; margin-bottom:6px;}
+  input[type=text], input[type=password], textarea, select{
+    width:100%; border:2px solid var(--line); border-radius:10px; padding:11px 12px;
+    font-family:inherit; font-size:1rem; background:#fff;
+  }
+  textarea{resize:vertical; min-height:70px;}
+  .btn{
+    border:2px solid var(--line); border-radius:12px; padding:12px 16px;
+    font-family:'Nunito'; font-weight:800; font-size:1rem; cursor:pointer;
+    background:var(--pink); color:#fff; box-shadow:3px 3px 0 var(--line);
+  }
+  .btn:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--line);}
+  .btn.secondary{background:#fff; color:var(--ink);}
+  .btn.ghost{background:transparent; box-shadow:none; border:none; text-decoration:underline; padding:4px;}
+  .hint{font-size:.8rem; color:#6b6473;}
+
+  /* Character list */
+  .list{padding:16px; gap:12px; display:flex; flex-direction:column; overflow-y:auto;}
+  .card{
+    border:2.5px solid var(--line); border-radius:14px; background:#fff;
+    padding:14px; display:flex; gap:12px; align-items:center; cursor:pointer;
+    box-shadow:3px 3px 0 var(--line);
+  }
+  .card:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--line);}
+  .avatar{
+    width:52px; height:52px; border-radius:50%; border:2.5px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;
+    font-family:'Kalam',cursive; font-weight:700; color:#fff;
+  }
+  .card .meta{min-width:0;}
+  .card .name{font-family:'Kalam',cursive; font-weight:700; font-size:1.15rem;}
+  .card .sub{font-size:.82rem; color:#6b6473; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .newcard{
+    border:2.5px dashed var(--line); border-radius:14px; padding:16px;
+    text-align:center; font-weight:800; color:var(--violet); cursor:pointer; background:transparent;
+  }
+  .empty{padding:40px 20px; text-align:center; color:#6b6473;}
+  .empty .big{font-size:2.5rem; margin-bottom:8px;}
+
+  /* Create character screen */
+  .create{padding:18px 20px; gap:12px; display:flex; flex-direction:column; overflow-y:auto;}
+  .swatches{display:flex; gap:8px; flex-wrap:wrap;}
+  .swatch{width:32px; height:32px; border-radius:50%; border:2px solid var(--line); cursor:pointer;}
+  .swatch.sel{outline:3px solid var(--pink); outline-offset:2px;}
+
+  /* Chat screen */
+  .chatbar{
+    padding:12px 14px; border-bottom:3px solid var(--line); display:flex; align-items:center; gap:10px;
+  }
+  .chatbar .name{font-family:'Kalam',cursive; font-weight:700; font-size:1.1rem; flex:1;}
+  .messages{flex:1; overflow-y:auto; padding:16px 14px; display:flex; flex-direction:column; gap:12px;}
+  .msg{max-width:82%; padding:10px 14px; line-height:1.45; font-size:.97rem; position:relative;}
+  .msg.ai{
+    align-self:flex-start; background:#fff; border:2.5px solid var(--line);
+    border-radius:4px 16px 16px 16px; box-shadow:2px 2px 0 var(--line);
+  }
+  .msg.user{
+    align-self:flex-end; background:var(--pink); color:#fff; border:2.5px solid var(--line);
+    border-radius:16px 4px 16px 16px; box-shadow:2px 2px 0 var(--line);
+  }
+  .msg .who{font-family:'Kalam',cursive; font-weight:700; font-size:.78rem; margin-bottom:3px; opacity:.75;}
+  .typing{align-self:flex-start; font-size:.85rem; color:#6b6473; font-style:italic; padding-left:4px;}
+  .inputbar{
+    display:flex; gap:8px; padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));
+    border-top:3px solid var(--line); background:var(--paper);
+  }
+  .inputbar textarea{flex:1; min-height:42px; max-height:120px; border-radius:16px;}
+  .sendbtn{
+    width:46px; height:46px; border-radius:50%; border:2.5px solid var(--line);
+    background:var(--pink); color:#fff; font-size:1.2rem; cursor:pointer; flex-shrink:0;
+    box-shadow:2px 2px 0 var(--line);
+  }
+  .sendbtn:active{transform:translate(1px,1px); box-shadow:1px 1px 0 var(--line);}
+  .err{background:#fff0f0; border:2px solid var(--pink); border-radius:10px; padding:10px 12px; font-size:.85rem; color:#a10033;}
+  ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-thumb{background:#c9c2d6; border-radius:3px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SETUP SCREEN -->
+  <div id="screen-setup" class="screen">
+    <header class="top halftone"><div class="brand">📖 Panel</div><div></div></header>
+    <div class="setup">
+      <h1>Kendi AI anime chat'in</h1>
+      <p>Tamamen ücretsiz çalışması için bir Gemini API key'ine ihtiyaç var. Key'in sadece bu telefonda, bu tarayıcıda saklanır — hiçbir yere gönderilmez.</p>
+      <div class="field">
+        <label>Gemini API Key</label>
+        <input type="password" id="apiKeyInput" placeholder="AIza... ile başlar" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Model</label>
+        <select id="modelSelect">
+          <option value="gemini-2.5-flash">gemini-2.5-flash (önerilen, hızlı)</option>
+          <option value="gemini-2.5-pro">gemini-2.5-pro (daha güçlü, daha yavaş)</option>
+          <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+        </select>
+      </div>
+      <button class="btn" id="saveKeyBtn">Kaydet ve başla</button>
+      <p class="hint">Key'i aistudio.google.com üzerinden "Get API key" diyerek ücretsiz alabilirsin.</p>
+      <div id="setupErr"></div>
+    </div>
+  </div>
+
+  <!-- CHARACTER LIST SCREEN -->
+  <div id="screen-list" class="screen">
+    <header class="top halftone">
+      <div class="brand">📖 Panel</div>
+      <button class="iconbtn" id="settingsBtn" title="Ayarlar">⚙️</button>
+    </header>
+    <div class="list" id="charList"></div>
+  </div>
+
+  <!-- CREATE CHARACTER SCREEN -->
+  <div id="screen-create" class="screen">
+    <header class="top">
+      <button class="iconbtn" id="createBackBtn">←</button>
+      <div class="brand">Yeni karakter</div>
+      <div style="width:38px"></div>
+    </header>
+    <div class="create">
+      <div class="field">
+        <label>İsim</label>
+        <input type="text" id="charName" placeholder="örn. Aiko">
+      </div>
+      <div class="field">
+        <label>Kişilik / karakter açıklaması</label>
+        <textarea id="charPersona" placeholder="örn. Aiko utangaç ama sıcakkanlı bir kız öğrenci, kediler ve tatlıları sever, konuşurken bazen kekeler..."></textarea>
+      </div>
+      <div class="field">
+        <label>İlk mesajı (opsiyonel, karakter bununla başlar)</label>
+        <textarea id="charGreeting" placeholder="örn. *sana gülümser* M-merhaba... seni burada görmeyi beklemiyordum!"></textarea>
+      </div>
+      <div class="field">
+        <label>Renk</label>
+        <div class="swatches" id="colorSwatches"></div>
+      </div>
+      <button class="btn" id="createSaveBtn">Karakteri oluştur</button>
+    </div>
+  </div>
+
+  <!-- CHAT SCREEN -->
+  <div id="screen-chat" class="screen">
+    <div class="chatbar">
+      <button class="iconbtn" id="chatBackBtn">←</button>
+      <div class="name" id="chatCharName">Karakter</div>
+      <button class="iconbtn" id="resetChatBtn" title="Sohbeti sıfırla">🗑️</button>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div class="inputbar">
+      <textarea id="msgInput" placeholder="Mesajını yaz..." rows="1"></textarea>
+      <button class="sendbtn" id="sendBtn">➤</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const COLORS = ['#ff3d6e','#4b3a70','#f2c14e','#3aa6a6','#8c5cff','#ff8c42'];
+
+// ---------- storage helpers ----------
+const store = {
+  get(k, def){ try{ const v = localStorage.getItem(k); return v===null?def:JSON.parse(v); }catch(e){ return def; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+
+let state = {
+  apiKey: store.get('panel_api_key', ''),
+  model: store.get('panel_model', 'gemini-2.5-flash'),
+  characters: store.get('panel_characters', []),
+  activeCharId: null,
+};
+
+// ---------- screen nav ----------
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function init(){
+  if(!state.apiKey){
+    showScreen('screen-setup');
+  } else {
+    renderCharList();
+    showScreen('screen-list');
+  }
+  buildSwatches();
+}
+
+// ---------- setup ----------
+document.getElementById('saveKeyBtn').onclick = ()=>{
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const model = document.getElementById('modelSelect').value;
+  const errBox = document.getElementById('setupErr');
+  errBox.innerHTML = '';
+  if(!key){
+    errBox.innerHTML = '<div class="err">Lütfen bir API key gir.</div>';
+    return;
+  }
+  state.apiKey = key; state.model = model;
+  store.set('panel_api_key', key); store.set('panel_model', model);
+  renderCharList();
+  showScreen('screen-list');
+};
+
+document.getElementById('settingsBtn').onclick = ()=>{
+  document.getElementById('apiKeyInput').value = state.apiKey;
+  document.getElementById('modelSelect').value = state.model;
+  showScreen('screen-setup');
+};
+
+// ---------- character list ----------
+function renderCharList(){
+  const list = document.getElementById('charList');
+  list.innerHTML = '';
+  if(state.characters.length===0){
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.innerHTML = '<div class="big">🎭</div><div>Henüz karakterin yok.<br>Aşağıdan ilk karakterini oluştur.</div>';
+    list.appendChild(empty);
+  }
+  state.characters.forEach(c=>{
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<div class="avatar" style="background:${c.color}">${c.name.charAt(0).toUpperCase()}</div>
+      <div class="meta"><div class="name">${escapeHtml(c.name)}</div><div class="sub">${escapeHtml(c.persona.slice(0,60))}</div></div>`;
+    card.onclick = ()=> openChat(c.id);
+    list.appendChild(card);
+  });
+  const newCard = document.createElement('div');
+  newCard.className = 'newcard';
+  newCard.textContent = '+ Yeni karakter oluştur';
+  newCard.onclick = ()=>{
+    document.getElementById('charName').value='';
+    document.getElementById('charPersona').value='';
+    document.getElementById('charGreeting').value='';
+    selectedColor = COLORS[0];
+    buildSwatches();
+    showScreen('screen-create');
+  };
+  list.appendChild(newCard);
+}
+
+document.getElementById('createBackBtn').onclick = ()=>{ renderCharList(); showScreen('screen-list'); };
+
+// ---------- create character ----------
+let selectedColor = COLORS[0];
+function buildSwatches(){
+  const wrap = document.getElementById('colorSwatches');
+  wrap.innerHTML = '';
+  COLORS.forEach(col=>{
+    const sw = document.createElement('div');
+    sw.className = 'swatch' + (col===selectedColor?' sel':'');
+    sw.style.background = col;
+    sw.onclick = ()=>{ selectedColor = col; buildSwatches(); };
+    wrap.appendChild(sw);
+  });
+}
+
+document.getElementById('createSaveBtn').onclick = ()=>{
+  const name = document.getElementById('charName').value.trim();
+  const persona = document.getElementById('charPersona').value.trim();
+  const greeting = document.getElementById('charGreeting').value.trim();
+  if(!name || !persona){ alert('İsim ve kişilik açıklaması gerekli.'); return; }
+  const c = { id: 'c'+Date.now(), name, persona, greeting, color: selectedColor };
+  state.characters.push(c);
+  store.set('panel_characters', state.characters);
+  renderCharList();
+  showScreen('screen-list');
+};
+
+// ---------- chat ----------
+function chatKey(id){ return 'panel_chat_' + id; }
+
+function openChat(id){
+  state.activeCharId = id;
+  const c = state.characters.find(x=>x.id===id);
+  document.getElementById('chatCharName').textContent = c.name;
+  let history = store.get(chatKey(id), null);
+  if(history === null){
+    history = [];
+    if(c.greeting){ history.push({role:'model', text:c.greeting}); }
+    store.set(chatKey(id), history);
+  }
+  renderMessages(history);
+  showScreen('screen-chat');
+  setTimeout(()=>document.getElementById('msgInput').focus(), 200);
+}
+
+document.getElementById('chatBackBtn').onclick = ()=>{ renderCharList(); showScreen('screen-list'); };
+
+document.getElementById('resetChatBtn').onclick = ()=>{
+  if(!confirm('Bu sohbetin tüm geçmişi silinsin mi?')) return;
+  const c = state.characters.find(x=>x.id===state.activeCharId);
+  let history = [];
+  if(c.greeting) history.push({role:'model', text:c.greeting});
+  store.set(chatKey(c.id), history);
+  renderMessages(history);
+};
+
+function renderMessages(history){
+  const box = document.getElementById('messages');
+  box.innerHTML = '';
+  const c = state.characters.find(x=>x.id===state.activeCharId);
+  history.forEach(m=>{
+    const div = document.createElement('div');
+    div.className = 'msg ' + (m.role==='user' ? 'user' : 'ai');
+    const who = m.role==='user' ? 'Sen' : c.name;
+    div.innerHTML = `<div class="who">${escapeHtml(who)}</div>${escapeHtml(m.text).replace(/\n/g,'<br>')}`;
+    box.appendChild(div);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+const msgInput = document.getElementById('msgInput');
+msgInput.addEventListener('input', ()=>{
+  msgInput.style.height = 'auto';
+  msgInput.style.height = Math.min(msgInput.scrollHeight, 120) + 'px';
+});
+msgInput.addEventListener('keydown', (e)=>{
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+});
+document.getElementById('sendBtn').onclick = sendMessage;
+
+async function sendMessage(){
+  const text = msgInput.value.trim();
+  if(!text) return;
+  const c = state.characters.find(x=>x.id===state.activeCharId);
+  let history = store.get(chatKey(c.id), []);
+  history.push({role:'user', text});
+  store.set(chatKey(c.id), history);
+  renderMessages(history);
+  msgInput.value=''; msgInput.style.height='auto';
+
+  const box = document.getElementById('messages');
+  const typingEl = document.createElement('div');
+  typingEl.className = 'typing';
+  typingEl.textContent = c.name + ' yazıyor...';
+  box.appendChild(typingEl);
+  box.scrollTop = box.scrollHeight;
+
+  try{
+    const reply = await callGemini(c, history);
+    typingEl.remove();
+    history.push({role:'model', text:reply});
+    store.set(chatKey(c.id), history);
+    renderMessages(history);
+  }catch(err){
+    typingEl.remove();
+    const errDiv = document.createElement('div');
+    errDiv.className = 'msg ai';
+    errDiv.innerHTML = `<div class="who">Hata</div>${escapeHtml(err.message || 'Bir şeyler ters gitti. API key ve internet bağlantını kontrol et.')}`;
+    box.appendChild(errDiv);
+    box.scrollTop = box.scrollHeight;
+  }
+}
+
+async function callGemini(character, history){
+  const sys = `Sen bir rol yapma (roleplay) karakterisin. Adın: ${character.name}. Kişiliğin ve arka planın: ${character.persona}. Her zaman bu karakter olarak, birinci ağızdan, doğal ve sürükleyici şekilde cevap ver. Aksiyonları *yıldız içinde* yazabilirsin. Kullanıcıyı asla yapay zeka olduğunu hatırlatarak sohbetten çıkarma, karakterden kopma.`;
+  const contents = history.map(m=>({
+    role: m.role==='user' ? 'user' : 'model',
+    parts: [{text: m.text}]
+  }));
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${state.model}:generateContent?key=${encodeURIComponent(state.apiKey)}`;
+  const res = await fetch(url, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      system_instruction: { parts: [{text: sys}] },
+      contents: contents,
+      generationConfig: { temperature: 1.0, maxOutputTokens: 800 }
+    })
+  });
+  if(!res.ok){
+    const errBody = await res.text();
+    throw new Error('API hatası (' + res.status + '). Key doğru mu kontrol et.');
+  }
+  const data = await res.json();
+  const parts = data?.candidates?.[0]?.content?.parts;
+  if(!parts || !parts.length) throw new Error('Model boş cevap döndürdü, tekrar dener misin?');
+  return parts.map(p=>p.text||'').join('').trim() || '...';
+}
+
+init();
+</script>
+</body>
+</html>
