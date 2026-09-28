@@ -132,6 +132,11 @@
     box-shadow:2px 2px 0 var(--line);
   }
   .sendbtn:active{transform:translate(1px,1px); box-shadow:1px 1px 0 var(--line);}
+  .cast{display:flex; gap:6px; overflow-x:auto; padding:8px 12px; border-top:2px solid var(--line); background:var(--paper);}
+  .cast:empty{display:none;}
+  .chip{flex-shrink:0; border:2px solid var(--line); background:#fff; border-radius:999px; padding:4px 11px; font-weight:800; font-size:.8rem; cursor:pointer; font-family:inherit;}
+  .chip:active{background:var(--gold);}
+  .msg b{font-weight:800;}
   .err{background:#fff0f0; border:2px solid var(--pink); border-radius:10px; padding:10px 12px; font-size:.85rem; color:#a10033;}
   ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-thumb{background:#c9c2d6; border-radius:3px;}
 </style>
@@ -217,6 +222,7 @@
       <button class="iconbtn" id="resetChatBtn" title="Sohbeti sıfırla">🗑️</button>
     </div>
     <div class="messages" id="messages"></div>
+    <div class="cast" id="castBar"></div>
     <div class="inputbar">
       <textarea id="msgInput" placeholder="Mesajını yaz..." rows="1"></textarea>
       <button class="sendbtn" id="sendBtn">➤</button>
@@ -227,6 +233,56 @@
 
 <script>
 const COLORS = ['#ff3d6e','#4b3a70','#f2c14e','#3aa6a6','#8c5cff','#ff8c42'];
+
+const MHA_LORE = `
+SETTING: About 80% of people have Quirks (superpowers). Licensed pro heroes fight villains and are ranked on the Hero Billboard Chart. UA High School (Yuei), in Musutafu, is the top hero academy. Class 1-A's homeroom teacher is Shota Aizawa.
+
+MAIN STORY (canon order): Izuku Midoriya (Deku) is born Quirkless, meets his idol All Might (Toshinori Yagi, the Symbol of Peace) and inherits One For All, a Quirk passed down through generations that stockpiles power. Its nemesis is All For One (AFO), a villain who steals and hands out Quirks and who shaped Tomura Shigaraki (Tenko Shimura, Decay Quirk) into leader of the League of Villains. Arcs: entrance exam; Battle Trial and USJ attack; Sports Festival (Todoroki vs Deku, Bakugo vs Uraraka); Stain the Hero Killer in Hosu; Provisional License Exam; Forest Training Camp and Bakugo's kidnapping; Kamino Ward, where All Might beats AFO but loses his power and retires to teach; Shie Hassaikai/Overhaul arc (rescuing Eri); Class 1-A vs 1-B joint training; Meta Liberation Army; Dark Deku arc (Deku leaves to protect classmates, the class brings him back); Paranormal Liberation War (Shigaraki awakens, hero society is shaken; Dabi reveals he is Toya Todoroki, Endeavor's eldest son); final war where heroes, UA students and allies unite against Shigaraki/AFO. The epilogue is years later: society rebuilds, Deku ends up teaching at UA. Endgame events are spoilers: only use them if the user's timeline reaches them, and never let characters know things they have not lived through.
+
+CLASS 1-A:
+- Izuku Midoriya (Deku): One For All. Anxious, kind, mutters while analyzing, keeps hero-analysis notebooks, cries easily, self-sacrificing. Calls Bakugo "Kacchan".
+- Katsuki Bakugo: Explosion. Loud, proud, aggressive, insults people ("Deku!", "extras"), fiercely competitive, secretly loyal and respects Deku.
+- Shoto Todoroki: Half-Cold Half-Hot. Calm, deadpan, socially clueless, family trauma with Endeavor, slowly opening up.
+- Ochaco Uraraka: Zero Gravity. Cheerful, determined, flustered around Deku, wants to earn money for her parents.
+- Tenya Iida: Engine. Formal, stiff, chopping hand gestures, class rep, strong sense of duty; his brother is Ingenium.
+- Eijiro Kirishima: Hardening. Warm, "manly" talk, Bakugo's best friend.
+- Momo Yaoyorozu: Creation. Brilliant, elegant, polite, vice class rep.
+- Kyoka Jiro: Earphone Jack. Dry sarcasm, loves music.
+- Denki Kaminari: Electrification. Goofy, flirty, brain-fries into "wei".
+- Mina Ashido: Acid. Upbeat, party-loving dancer.
+- Tsuyu Asui: Frog. Blunt and calm, says whatever she thinks, ends thoughts with "kero".
+- Mezo Shoji: Dupli-Arms. Quiet, reliable, observant.
+- Fumikage Tokoyami: Dark Shadow. Edgy, poetic, secretly loves cute things.
+- Hanta Sero: Tape. Laid-back, friendly, funny.
+- Rikido Sato: Sugar Rush. Big-hearted, loves baking.
+- Yuga Aoyama: Navel Laser. Dramatic, sparkly, French phrases.
+- Mashirao Ojiro: Tail. Humble martial artist.
+- Koji Koda: Anivoice. Shy animal lover.
+- Toru Hagakure: Invisibility. Chatty, energetic.
+- Minoru Mineta: Pop Off. Perverted comic relief, cowardly but occasionally heroic.
+- Hitoshi Shinso: Brainwashing. Sleepy, sarcastic, dry humor.
+
+TEACHERS: Shota Aizawa (Eraser Head, Erasure): tired, sarcastic, rational, secretly protective. All Might: booming hero voice ("I am here!"), now frail in true form, warm mentor. Hizashi Yamada (Present Mic): loud radio DJ. Nemuri Kayama (Midnight): teasing, confident. Cementoss, Recovery Girl (healing kiss), Principal Nezu (brilliant, strategic mouse-bear-dog), Vlad King (Class 1-B).
+
+PRO HEROES: Endeavor (Enji Todoroki, Hellflame): harsh, proud, driven, seeking redemption. Hawks (Keigo Takami, Fierce Wings): laid-back, teasing, sharp, hides depth. Mirko (Rumi Usagiyama): fierce, wild fighter. Best Jeanist: formal, fashion-obsessed. Edgeshot, Kamui Woods, Gang Orca, Mt. Lady, Gran Torino (fast old man), the Wild Wild Pussycats (Mandalay, Pixie-Bob, Ragdoll, Tiger).
+
+VILLAINS: Tomura Shigaraki: scratches his neck, bitter and childish rage, Decay. All For One: calm gentle voice, ancient manipulator. Kurogiri: polite, formal, Warp Gate. Dabi: sarcastic dark humor, blue flames. Himiko Toga: giddy, obsessed with blood and love, Transform. Twice: erratic, kind-hearted, Double. Spinner: loyal, admires Stain. Mr. Compress. Overhaul (Kai Chisaki): cold germaphobe. Stain: ideological Hero Killer.
+
+TONE: shonen energy, humor mixed with real stakes. Keep every character true to canon personality and speech style.
+`;
+
+const PRESETS = [{
+  id: 'preset_mha',
+  name: 'My Hero Academia',
+  persona: 'Tüm MHA evreni: anlatıcı + istediğin karakterle konuş, sahnede birden fazla kişi konuşur',
+  greeting: '*Kahraman Komisyonu binasındaki geniş toplantı salonu onlarca pro kahramanın uğultusuyla dolu. UA 1-A sınıfı, Aizawa\'nın peşinden içeri giriyor. Sen ön sıralardan birinde oturuyorsun.*\nAizawa: "Hepiniz, düzgün davranın. İlk izlenim önemli."\nIida: "Evet, Sensei!" *elini keskin bir hareketle indirir*\nDeku: *defterini çıkarıp heyecanla fısıldar* "Endeavor, Hawks, Mirko... hepsi burada!"\nUraraka: "Şuradaki de Gang Orca!"\nMina: "Vay be, Vahşi Vahşi Kediler bile gelmiş!"\n*Iida\'nın bakışı senin üzerinde durur.*\nIida: "Aizawa-Sensei, şu pro kahraman kim?"',
+  color: '#ff8c42',
+  model: null,
+  story: true,
+  cast: ['Deku','Bakugo','Todoroki','Uraraka','Iida','Kirishima','Momo','Aizawa','All Might','Endeavor','Hawks','Shigaraki','Dabi','Toga'],
+  lore: MHA_LORE
+}];
+
 
 // ---------- storage helpers ----------
 const store = {
@@ -301,6 +357,19 @@ function renderCharList(){
     card.onclick = ()=> openChat(c.id);
     list.appendChild(card);
   });
+  PRESETS.forEach(pr=>{
+    if(state.characters.some(c=>c.id===pr.id)) return;
+    const pc = document.createElement('div');
+    pc.className = 'newcard';
+    pc.textContent = '📚 Hazır bot ekle: ' + pr.name;
+    pc.onclick = ()=>{
+      const copy = Object.assign({}, pr); delete copy.lore;
+      state.characters.push(copy);
+      store.set('panel_characters', state.characters);
+      renderCharList();
+    };
+    list.appendChild(pc);
+  });
   const newCard = document.createElement('div');
   newCard.className = 'newcard';
   newCard.textContent = '+ Yeni karakter oluştur';
@@ -359,6 +428,7 @@ function openChat(id){
     store.set(chatKey(id), history);
   }
   renderMessages(history);
+  buildCast(c);
   showScreen('screen-chat');
   setTimeout(()=>document.getElementById('msgInput').focus(), 200);
 }
@@ -382,7 +452,7 @@ function renderMessages(history){
     const div = document.createElement('div');
     div.className = 'msg ' + (m.role==='user' ? 'user' : 'ai');
     const who = m.role==='user' ? 'Sen' : c.name;
-    div.innerHTML = `<div class="who">${escapeHtml(who)}</div>${escapeHtml(m.text).replace(/\n/g,'<br>')}<button class="delx" data-idx="${idx}" title="Mesajı sil">🗑️</button>`;
+    div.innerHTML = `<div class="who">${escapeHtml(who)}</div>${fmt(m.text, m.role)}<button class="delx" data-idx="${idx}" title="Mesajı sil">🗑️</button>`;
     box.appendChild(div);
   });
   box.scrollTop = box.scrollHeight;
@@ -394,6 +464,23 @@ function renderMessages(history){
       store.set(chatKey(state.activeCharId), h);
       renderMessages(h);
     };
+  });
+}
+
+function fmt(t, role){
+  let s = escapeHtml(t);
+  if(role!=='user') s = s.replace(/^([^\n:*]{1,28}):/gm, '<b>$1:</b>');
+  return s.replace(/\n/g,'<br>');
+}
+
+function buildCast(c){
+  const bar = document.getElementById('castBar');
+  bar.innerHTML = '';
+  (c.cast||[]).forEach(n=>{
+    const b = document.createElement('button');
+    b.className = 'chip'; b.textContent = '@' + n;
+    b.onclick = ()=>{ msgInput.value = '@' + n + ' ' + msgInput.value; msgInput.focus(); };
+    bar.appendChild(b);
   });
 }
 
@@ -462,15 +549,35 @@ NASIL OYNAYACAKSIN:
     role: m.role==='user' ? 'user' : 'model',
     parts: [{text: m.text}]
   }));
+  const preset = PRESETS.find(pr=>pr.id===character.id);
+  const lore = preset ? preset.lore : null;
+  let fullSys = sys + '\nDİL: Kullanıcı hangi dilde yazıyorsa o dilde cevap ver; dil değiştirmeni isterse hemen değiştir.';
+  if(lore){
+    fullSys = `Sen "${character.name}" evreninde çalışan bir interaktif rol yapma anlatıcısı ve karakter oyuncususun. Kullanıcı hikayenin içinde kendi karakteriyle (oyuncu) yer alıyor.
+
+KURALLAR:
+- Sahneyi kısa anlatım (*yıldız içinde*) ve karakter repliklerinden kur. Her repliği ayrı satıra "İsim: \"replik\"" biçiminde yaz; aksiyonu *yıldız* içinde ekle.
+- Kullanıcı bir karaktere hitap ederse (@İsim ya da adını yazarak) ağırlıklı olarak o karakter cevap versin; sahneye uyuyorsa 1-2 karakter kısa araya girebilir. Genel bir sahnede 2-4 karakter kendi kişiliğine uygun konuşsun.
+- Karakterleri canon kişilikleri, konuşma tarzları, güçleri ve ilişkileriyle canlandır. Hiçbir karakter yaşamadığı olayları bilmesin.
+- Kullanıcının karakteri adına ASLA konuşma, hareket etme ya da karar verme.
+- Her mesajda sahneyi ilerlet, tekrar etme, sonunda kullanıcının tepki verebileceği bir boşluk bırak.
+- Uzunluk: 4-9 kısa satır, duvar yazı yok.
+- Yapay zeka olduğunu söyleme, sahnenin dışına çıkma.
+- Kullanıcı başka bir zaman dilimi ya da alternatif evren isterse ona uy.
+- Kullanıcı hangi dilde yazıyorsa o dilde cevap ver; dil değiştirmeni isterse hemen değiştir.
+
+DÜNYA BİLGİSİ (İngilizce yazıldı, cevabı kullanıcının dilinde ver):
+${lore}`;
+  }
   const modelToUse = character.model || state.model;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${encodeURIComponent(state.apiKey)}`;
   const res = await fetch(url, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({
-      system_instruction: { parts: [{text: sys}] },
+      system_instruction: { parts: [{text: fullSys}] },
       contents: contents,
-      generationConfig: { temperature: 1.05, topP: 0.95, maxOutputTokens: 380 }
+      generationConfig: { temperature: 1.05, topP: 0.95, maxOutputTokens: lore ? 750 : 380 }
     })
   });
   if(!res.ok){
