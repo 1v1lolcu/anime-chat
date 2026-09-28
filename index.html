@@ -80,7 +80,7 @@
     display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;
     font-family:'Kalam',cursive; font-weight:700; color:#fff;
   }
-  .card .meta{min-width:0;}
+  .card .meta{min-width:0; flex:1;}
   .card .name{font-family:'Kalam',cursive; font-weight:700; font-size:1.15rem;}
   .card .sub{font-size:.82rem; color:#6b6473; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .newcard{
@@ -354,16 +354,29 @@ function renderCharList(){
     card.className = 'card';
     card.innerHTML = `<div class="avatar" style="background:${c.color}">${c.name.charAt(0).toUpperCase()}</div>
       <div class="meta"><div class="name">${escapeHtml(c.name)}</div><div class="sub">${escapeHtml(c.persona.slice(0,60))}</div></div>`;
+    const del = document.createElement('button');
+    del.className = 'iconbtn'; del.textContent = '🗑️'; del.title = 'Karakteri sil';
+    del.onclick = (e)=>{
+      e.stopPropagation();
+      if(!confirm(c.name + ' ve tüm sohbet geçmişi silinsin mi?')) return;
+      state.characters = state.characters.filter(x=>x.id!==c.id);
+      store.set('panel_characters', state.characters);
+      try{ localStorage.removeItem(chatKey(c.id)); }catch(err){}
+      renderCharList();
+    };
+    card.appendChild(del);
     card.onclick = ()=> openChat(c.id);
     list.appendChild(card);
   });
   PRESETS.forEach(pr=>{
-    if(state.characters.some(c=>c.id===pr.id)) return;
+    const n = state.characters.filter(c=>(c.presetId||c.id)===pr.id).length;
     const pc = document.createElement('div');
     pc.className = 'newcard';
-    pc.textContent = '📚 Hazır bot ekle: ' + pr.name;
+    pc.textContent = n ? '📚 Yeni ' + pr.name + ' sohbeti ekle (sıfırdan başlar)' : '📚 Hazır bot ekle: ' + pr.name;
     pc.onclick = ()=>{
       const copy = Object.assign({}, pr); delete copy.lore;
+      copy.id = 'c' + Date.now(); copy.presetId = pr.id;
+      if(n) copy.name = pr.name + ' (' + (n+1) + ')';
       state.characters.push(copy);
       store.set('panel_characters', state.characters);
       renderCharList();
@@ -549,11 +562,11 @@ NASIL OYNAYACAKSIN:
     role: m.role==='user' ? 'user' : 'model',
     parts: [{text: m.text}]
   }));
-  const preset = PRESETS.find(pr=>pr.id===character.id);
+  const preset = PRESETS.find(pr=>pr.id===(character.presetId||character.id));
   const lore = preset ? preset.lore : null;
   let fullSys = sys + '\nDİL: Kullanıcı hangi dilde yazıyorsa o dilde cevap ver; dil değiştirmeni isterse hemen değiştir.';
   if(lore){
-    fullSys = `Sen "${character.name}" evreninde çalışan bir interaktif rol yapma anlatıcısı ve karakter oyuncususun. Kullanıcı hikayenin içinde kendi karakteriyle (oyuncu) yer alıyor.
+    fullSys = `Sen "${preset.name}" evreninde çalışan bir interaktif rol yapma anlatıcısı ve karakter oyuncususun. Kullanıcı hikayenin içinde kendi karakteriyle (oyuncu) yer alıyor.
 
 KURALLAR:
 - Sahneyi kısa anlatım (*yıldız içinde*) ve karakter repliklerinden kur. Her repliği ayrı satıra "İsim: \"replik\"" biçiminde yaz; aksiyonu *yıldız* içinde ekle.
