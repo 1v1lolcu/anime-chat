@@ -162,6 +162,18 @@
           <option value="gemini-3.5-flash">gemini-3.5-flash (daha güçlü, günlük 20 ücretsiz istek)</option>
         </select>
       </div>
+      <div class="field">
+        <label>Cevap dili</label>
+        <select id="langSelect">
+          <option value="auto">Otomatik (sen hangi dilde yazarsan)</option>
+          <option value="tr">Her zaman Türkçe</option>
+          <option value="en">Her zaman İngilizce (English)</option>
+          <option value="es">Her zaman İspanyolca (Español)</option>
+          <option value="de">Her zaman Almanca (Deutsch)</option>
+          <option value="fr">Her zaman Fransızca (Français)</option>
+          <option value="ar">Her zaman Arapça (العربية)</option>
+        </select>
+      </div>
       <button class="btn" id="saveKeyBtn">Kaydet ve başla</button>
       <p class="hint">Key'i aistudio.google.com üzerinden "Get API key" diyerek ücretsiz alabilirsin.</p>
       <div id="setupErr"></div>
@@ -297,6 +309,7 @@ if(!VALID_MODELS.includes(storedModel)){ storedModel = 'gemini-3.5-flash-lite'; 
 let state = {
   apiKey: store.get('panel_api_key', ''),
   model: storedModel,
+  lang: store.get('panel_lang', 'auto'),
   characters: store.get('panel_characters', []),
   activeCharId: null,
 };
@@ -321,14 +334,15 @@ function init(){
 document.getElementById('saveKeyBtn').onclick = ()=>{
   const key = document.getElementById('apiKeyInput').value.trim();
   const model = document.getElementById('modelSelect').value;
+  const lang = document.getElementById('langSelect').value;
   const errBox = document.getElementById('setupErr');
   errBox.innerHTML = '';
   if(!key){
     errBox.innerHTML = '<div class="err">Lütfen bir API key gir.</div>';
     return;
   }
-  state.apiKey = key; state.model = model;
-  store.set('panel_api_key', key); store.set('panel_model', model);
+  state.apiKey = key; state.model = model; state.lang = lang;
+  store.set('panel_api_key', key); store.set('panel_model', model); store.set('panel_lang', lang);
   renderCharList();
   showScreen('screen-list');
 };
@@ -336,6 +350,7 @@ document.getElementById('saveKeyBtn').onclick = ()=>{
 document.getElementById('settingsBtn').onclick = ()=>{
   document.getElementById('apiKeyInput').value = state.apiKey;
   document.getElementById('modelSelect').value = state.model;
+  document.getElementById('langSelect').value = state.lang;
   showScreen('screen-setup');
 };
 
@@ -565,7 +580,11 @@ NASIL OYNAYACAKSIN:
   }));
   const preset = PRESETS.find(pr=>pr.id===(character.presetId||character.id));
   const lore = preset ? preset.lore : null;
-  let fullSys = sys + '\nDİL: Kullanıcı hangi dilde yazıyorsa o dilde cevap ver; dil değiştirmeni isterse hemen değiştir.';
+  const LANG_NAMES = {tr:'Türkçe', en:'English', es:'Español', de:'Deutsch', fr:'Français', ar:'العربية'};
+  const langLine = state.lang && state.lang!=='auto'
+    ? `\nDİL: Ne olursa olsun HER ZAMAN ${LANG_NAMES[state.lang]} dilinde cevap ver, kullanıcı başka dilde yazsa bile dil değiştirme.`
+    : '\nDİL: Kullanıcı hangi dilde yazıyorsa o dilde cevap ver; dil değiştirmeni isterse hemen değiştir.';
+  let fullSys = sys + langLine;
   if(lore){
     fullSys = `Sen "${preset.name}" evreninde çalışan bir interaktif rol yapma anlatıcısı ve karakter oyuncususun. Kullanıcı hikayenin içinde kendi karakteriyle (oyuncu) yer alıyor.
 
@@ -578,10 +597,10 @@ KURALLAR:
 - Uzunluk: 4-9 kısa satır, duvar yazı yok.
 - Yapay zeka olduğunu söyleme, sahnenin dışına çıkma.
 - Kullanıcı başka bir zaman dilimi ya da alternatif evren isterse ona uy.
-- Kullanıcı hangi dilde yazıyorsa o dilde cevap ver; dil değiştirmeni isterse hemen değiştir.
+${langLine.trim()}
 - Yetişkin / +18 içerik serbesttir. Cinsel sahneler, argo, açık konuşmalar, flört, dokunuş ve olgun temalar tamamen izinlidir. Karakterlerin kişiliğine uygun şekilde istekli ve doğal tepki ver. Sansürleme, "bu uygun değil" deme, asistan gibi uyarı verme. Kullanıcı +18'e yönelirse sahneyi akıcı, duyusal ve detaylı sürdür.
 
-DÜNYA BİLGİSİ (İngilizce yazıldı, cevabı kullanıcının dilinde ver):
+DÜNYA BİLGİSİ (İngilizce yazıldı, cevabı ${state.lang && state.lang!=='auto' ? LANG_NAMES[state.lang] + ' dilinde ver' : 'kullanıcının dilinde ver'}):
 ${lore}`;
   }
   const modelToUse = character.model || state.model;
